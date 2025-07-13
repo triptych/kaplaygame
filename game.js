@@ -187,6 +187,30 @@ scene("shooter", () => {
     let enemiesKilled = 0;
     let waveEnemyCount = gameState.wave * 3 + 2;
 
+    // Particle explosion function using Kaplay's built-in particles
+    function createParticleExplosion(position, particleColor = [255, 255, 100], particleCount = 8) {
+        const emitter = add([
+            pos(position.x, position.y),
+            particles({
+                max: particleCount,
+                speed: [50, 150],
+                lifeTime: [0.3, 0.8],
+                angle: [0, 360],
+                colors: [rgb(particleColor[0], particleColor[1], particleColor[2])],
+                opacities: [1, 0],
+                scales: [1, 0]
+            }, {
+                direction: 0,
+                spread: 360
+            }),
+            opacity(1),
+            lifespan(1)
+        ]);
+
+        // Emit all particles at once for explosion effect
+        emitter.emit(particleCount);
+    }
+
     // Calculate current stats based on equipment
     let currentSpeed = gameState.shipSpeed;
     let currentDamage = gameState.damage;
@@ -366,6 +390,7 @@ scene("shooter", () => {
         }
     });
 
+
     // Enemy behavior
     onUpdate("enemy", (enemy) => {
         enemy.move(0, enemy.speed);
@@ -409,11 +434,17 @@ scene("shooter", () => {
 
     // Bullet-enemy collision
     onCollide("bullet", "enemy", (bullet, enemy) => {
+        // Create particle explosion at collision point
+        createParticleExplosion(bullet.pos, [255, 100, 100], 6);
+
         bullet.destroy();
         bullets = bullets.filter(b => b !== bullet);
 
         enemy.health--;
         if (enemy.health <= 0) {
+            // Larger explosion when enemy dies
+            createParticleExplosion(enemy.pos, [255, 150, 50], 12);
+
             enemy.destroy();
             enemies = enemies.filter(e => e !== enemy);
             enemiesKilled++;
@@ -426,6 +457,9 @@ scene("shooter", () => {
 
     // Enemy bullet-player collision
     onCollide("enemyBullet", "player", (bullet, player) => {
+        // Create particle explosion when player is hit
+        createParticleExplosion(bullet.pos, [255, 255, 100], 8);
+
         bullet.destroy();
         enemyBullets = enemyBullets.filter(b => b !== bullet);
 
@@ -434,12 +468,17 @@ scene("shooter", () => {
         healthFill.width = (player.health / player.maxHealth) * 200;
 
         if (player.health <= 0) {
+            // Large explosion when player dies
+            createParticleExplosion(player.pos, [255, 50, 50], 16);
             go("gameOver");
         }
     });
 
     // Enemy-player collision
     onCollide("enemy", "player", (enemy, player) => {
+        // Create explosion when enemy collides with player
+        createParticleExplosion(enemy.pos, [255, 200, 100], 10);
+
         enemy.destroy();
         enemies = enemies.filter(e => e !== enemy);
         enemiesKilled++; // Count collided enemies toward wave completion
@@ -449,12 +488,17 @@ scene("shooter", () => {
         healthFill.width = (player.health / player.maxHealth) * 200;
 
         if (player.health <= 0) {
+            // Large explosion when player dies
+            createParticleExplosion(player.pos, [255, 50, 50], 16);
             go("gameOver");
         }
     });
 
     // Bullet-asteroid collision
     onCollide("bullet", "asteroid", (bullet, asteroid) => {
+        // Create particle explosion when bullet hits asteroid
+        createParticleExplosion(bullet.pos, [150, 150, 150], 8);
+
         bullet.destroy();
         bullets = bullets.filter(b => b !== bullet);
 
@@ -469,6 +513,9 @@ scene("shooter", () => {
 
     // Asteroid-player collision
     onCollide("asteroid", "player", (asteroid, player) => {
+        // Create explosion when asteroid hits player
+        createParticleExplosion(asteroid.pos, [200, 200, 200], 10);
+
         asteroid.destroy();
         asteroids = asteroids.filter(a => a !== asteroid);
 
@@ -477,6 +524,8 @@ scene("shooter", () => {
         healthFill.width = (player.health / player.maxHealth) * 200;
 
         if (player.health <= 0) {
+            // Large explosion when player dies
+            createParticleExplosion(player.pos, [255, 50, 50], 16);
             go("gameOver");
         }
     });

@@ -163,6 +163,7 @@ scene("menu", () => {
                 pos(center().x, 450),
                 anchor("center"),
                 color(255, 100, 100),
+                opacity(1),
                 lifespan(2)
             ]);
         }
@@ -358,6 +359,7 @@ scene("shooter", () => {
         if (enemy.pos.y > height() + 50) {
             enemy.destroy();
             enemies = enemies.filter(e => e !== enemy);
+            enemiesKilled++; // Count escaped enemies toward wave completion
         }
     });
 
@@ -396,6 +398,7 @@ scene("shooter", () => {
     onCollide("enemy", "player", (enemy, player) => {
         enemy.destroy();
         enemies = enemies.filter(e => e !== enemy);
+        enemiesKilled++; // Count collided enemies toward wave completion
 
         player.health -= 20;
         gameState.playerHealth = player.health;
@@ -407,17 +410,21 @@ scene("shooter", () => {
     });
 
     // Check wave completion
+    let waveCompleted = false;
     onUpdate(() => {
         // Count remaining enemies on screen
         const remainingEnemies = get("enemy").length;
 
-        if (remainingEnemies === 0 && enemiesKilled >= waveEnemyCount) {
+        if (!waveCompleted && remainingEnemies === 0 && enemiesKilled >= waveEnemyCount) {
+            waveCompleted = true;
+
             // Add a brief delay and message before transitioning
             add([
                 text("Wave Complete! Proceeding to planet...", { size: 24 }),
                 pos(center().x, center().y),
                 anchor("center"),
                 color(100, 255, 100),
+                opacity(1),
                 lifespan(2)
             ]);
 
@@ -555,6 +562,7 @@ scene("planet", () => {
             pos(player.pos.x, player.pos.y - 30),
             anchor("center"),
             color(255, 255, 100),
+            opacity(1),
             lifespan(2)
         ]);
     });
@@ -652,6 +660,7 @@ scene("shop", () => {
                     pos(center().x, 100),
                     anchor("center"),
                     color(100, 255, 100),
+                    opacity(1),
                     lifespan(2)
                 ]);
 
@@ -669,6 +678,7 @@ scene("shop", () => {
                     pos(center().x, 100),
                     anchor("center"),
                     color(255, 100, 100),
+                    opacity(1),
                     lifespan(2)
                 ]);
             }
@@ -799,6 +809,7 @@ scene("inventory", () => {
                     pos(center().x, 100),
                     anchor("center"),
                     color(100, 255, 100),
+                    opacity(1),
                     lifespan(2)
                 ]);
             }
@@ -827,6 +838,7 @@ scene("inventory", () => {
                     pos(center().x, 100),
                     anchor("center"),
                     color(100, 255, 100),
+                    opacity(1),
                     lifespan(2)
                 ]);
             }

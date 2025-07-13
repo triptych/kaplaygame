@@ -6,6 +6,12 @@ kaplay({
     global: true
 });
 
+// Load sprites
+loadSprite("rocket", "rocket.png");
+loadSprite("alien", "alien.png");
+loadSprite("asteroid", "asteroid.png");
+loadSprite("astronaut", "astronaut.png");
+
 // Game state
 let gameState = {
     wave: 1,
@@ -176,6 +182,7 @@ scene("shooter", () => {
     let enemies = [];
     let bullets = [];
     let enemyBullets = [];
+    let asteroids = [];
     let lastShot = 0;
     let enemiesKilled = 0;
     let waveEnemyCount = gameState.wave * 3 + 2;
@@ -203,11 +210,11 @@ scene("shooter", () => {
 
     // Create player ship
     player = add([
-        rect(20, 30),
+        sprite("rocket"),
         pos(center().x, height() - 100),
         anchor("center"),
         area(),
-        color(100, 150, 255),
+        scale(0.08),
         "player",
         {
             health: gameState.playerHealth,
@@ -222,11 +229,11 @@ scene("shooter", () => {
     function spawnEnemies() {
         for (let i = 0; i < waveEnemyCount; i++) {
             const enemy = add([
-                rect(15, 15),
+                sprite("alien"),
                 pos(rand(50, width() - 50), rand(-200, -50)),
                 anchor("center"),
                 area(),
-                color(255, 100, 100),
+                scale(0.06),
                 "enemy",
                 {
                     speed: rand(50, 100),
@@ -238,7 +245,32 @@ scene("shooter", () => {
         }
     }
 
+    // Spawn asteroids
+    function spawnAsteroids() {
+        // Spawn 2-4 asteroids randomly during the wave
+        const asteroidCount = rand(2, 5);
+        for (let i = 0; i < asteroidCount; i++) {
+            wait(rand(5, 15), () => {
+                const asteroid = add([
+                    sprite("asteroid"),
+                    pos(rand(50, width() - 50), -50),
+                    anchor("center"),
+                    area(),
+                    scale(rand(0.04, 0.08)),
+                    rotate(rand(0, 360)),
+                    "asteroid",
+                    {
+                        speed: rand(30, 80),
+                        rotationSpeed: rand(-2, 2)
+                    }
+                ]);
+                asteroids.push(asteroid);
+            });
+        }
+    }
+
     spawnEnemies();
+    spawnAsteroids();
 
     // UI
     const healthBar = add([
@@ -363,6 +395,18 @@ scene("shooter", () => {
         }
     });
 
+    // Asteroid behavior
+    onUpdate("asteroid", (asteroid) => {
+        asteroid.move(0, asteroid.speed);
+        asteroid.angle += asteroid.rotationSpeed;
+
+        // Remove asteroids that go off screen
+        if (asteroid.pos.y > height() + 50) {
+            asteroid.destroy();
+            asteroids = asteroids.filter(a => a !== asteroid);
+        }
+    });
+
     // Bullet-enemy collision
     onCollide("bullet", "enemy", (bullet, enemy) => {
         bullet.destroy();
@@ -401,6 +445,34 @@ scene("shooter", () => {
         enemiesKilled++; // Count collided enemies toward wave completion
 
         player.health -= 20;
+        gameState.playerHealth = player.health;
+        healthFill.width = (player.health / player.maxHealth) * 200;
+
+        if (player.health <= 0) {
+            go("gameOver");
+        }
+    });
+
+    // Bullet-asteroid collision
+    onCollide("bullet", "asteroid", (bullet, asteroid) => {
+        bullet.destroy();
+        bullets = bullets.filter(b => b !== bullet);
+
+        asteroid.destroy();
+        asteroids = asteroids.filter(a => a !== asteroid);
+
+        gameState.score += 5;
+        gameState.gold += 2;
+        scoreText.text = `Score: ${gameState.score}`;
+        goldText.text = `Gold: ${gameState.gold}`;
+    });
+
+    // Asteroid-player collision
+    onCollide("asteroid", "player", (asteroid, player) => {
+        asteroid.destroy();
+        asteroids = asteroids.filter(a => a !== asteroid);
+
+        player.health -= 15;
         gameState.playerHealth = player.health;
         healthFill.width = (player.health / player.maxHealth) * 200;
 
@@ -472,13 +544,13 @@ scene("planet", () => {
         ]);
     }
 
-    // Create player
+    // Create player (astronaut for planet exploration)
     player = add([
-        circle(10),
+        sprite("astronaut"),
         pos(100, 100),
         anchor("center"),
         area(),
-        color(100, 150, 255),
+        scale(0.06), // Scaled down from 1024x1024 original size
         "player"
     ]);
 
